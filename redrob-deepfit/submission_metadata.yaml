@@ -1,0 +1,61 @@
+# Place this file at the repo root before submitting.
+# Copy from submission_metadata_template.yaml and fill in team details.
+
+team_name: "deepfit"
+
+primary_contact:
+  name: "Bhavishya Jain"
+  email: "bhavishyajain011@gmail.com"
+  phone: "+91-XXXXXXXXXX"  # TODO: fill before submitting
+
+team_members:
+  - name: "Bhavishya Jain"
+    email: "bhavishyajain011@gmail.com"
+    role: "Team Lead / ML Engineer"
+
+github_repo: "https://github.com/Bhavishya011/DeepFit-Multi-Signal-Semantic-Candidate-Ranker"
+sandbox_link: "https://huggingface.co/spaces/TODO/deepfit"  # TODO: deploy before submitting
+
+reproduce_command: "python rank.py --candidates ./candidates.jsonl --out ./submission.csv"
+
+compute:
+  platform: "Ubuntu 22.04 LTS (Docker container matching Stage 3 sandbox)"
+  cpu_cores: 4
+  ram_gb: 16
+  python_version: "3.11.4"
+  os: "Ubuntu 22.04 LTS"
+  uses_gpu_for_inference: false
+  has_network_during_ranking: false
+  pre_computation_required: true
+  pre_computation_time_minutes: 15  # rough: encoding 100K candidates offline
+
+ai_tools_used:
+  - "Claude"
+  - "GitHub Copilot"
+
+ai_usage_summary: |
+  Used Claude for architecture discussion, JD-intent decomposition, and code review.
+  Used GitHub Copilot for autocomplete. Used Claude once (offline) to draft the
+  JD-intent schema from the JD prose; the schema was then hand-reviewed and edited.
+  No candidate data was fed to any LLM. No LLM calls during the ranking step.
+
+methodology_summary: |
+  Multi-signal semantic ranker with 5 differentiated modules: (1) JD-Intent Decoder
+  parsing the JD into structured positive + negative + context axes; (2) Multi-field
+  candidate embeddings (title, summary, career, skills) with per-field weights;
+  (3) Hard honeypot + soft trap consistency scorer (kills keyword-stuffers);
+  (4) Production-evidence regex extractor distinguishing shipped ML from research-only;
+  (5) Multiplicative availability multiplier in [0.30, 1.20] so dead candidates sink
+  even with perfect semantic match. Final score = additive base (semantic 0.55,
+  structural 0.20, production 0.10, esco_coverage 0.10, seniority 0.05) multiplied
+  by honeypot (0/1), trap (0.3/1.0), and availability. Cascade: per-field BM25 +
+  FAISS dense RRF recall top-1000, bge-reranker-base ONNX int8 rerank top-500.
+  Reasoning is template-based with anti-hallucination CI checks. Runtime ~50s
+  for 100K candidates on CPU.
+
+declarations:
+  read_submission_spec: true
+  code_is_original_work: true
+  no_collusion: true
+  honeypot_check_done: true
+  reproduction_tested: false  # set true after end-to-end test passes

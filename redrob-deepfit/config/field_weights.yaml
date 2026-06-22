@@ -1,0 +1,50 @@
+# Field Weights — multi-field embedding & per-field BM25 weights
+# ============================================================================
+# Used by:
+#   - precompute/02_encode_candidates.py (for combined_emb construction)
+#   - ranker/recall.py (for per-field BM25 weighted sum)
+#   - ranker/rerank.py (for multi-axis semantic score)
+#
+# These weights are tunable. Tune on dev_set (50 hand-labeled candidates)
+# using scripts/tune_field_weights.py.
+# ============================================================================
+
+# ─── Combined embedding (single vector per candidate, used for FAISS coarse recall) ───
+# These weights are L2-normalized before summing embeddings.
+combined_embedding_weights:
+  title:   3.0    # Most discriminative — "Marketing Manager" should never match "AI Engineer"
+  summary: 1.5    # Self-curated, medium weight
+  career:  2.0    # Production evidence lives here
+  skills:  1.0    # Lowest weight — most easily stuffed
+
+# ─── Per-field BM25 weights (used in RRF fusion with dense) ───
+# We run 4 separate BM25Okapi instances, one per field.
+# Final bm25_score = weighted sum of z-scored per-field scores.
+bm25_field_weights:
+  title:   4.0    # Highest signal — title is the single most discriminative field
+  skills:  2.0    # Skills are explicit but easily stuffed
+  career:  2.5    # Career descriptions contain production evidence
+  summary: 1.0    # Lowest weight — summaries are self-curated marketing copy
+
+# ─── Multi-axis semantic score weights (Module 6, Stage C) ───
+# Weighted sum of cosine similarities against intent axis embeddings.
+# MUST sum to 1.0 (asserted in code).
+semantic_axis_weights:
+  title_fit:          0.25
+  career_retrieval:   0.20
+  career_ranking:     0.15
+  career_llm:         0.10
+  skills_coverage:    0.10
+  cross_enc:          0.20
+
+# ─── RRF fusion constant (reciprocal rank fusion) ───
+rrf_k: 60   # standard reciprocal rank fusion constant
+
+# ─── Coarse recall pool size (top-K from RRF, before cross-encoder rerank) ───
+coarse_recall_top_k: 1000
+
+# ─── Cross-encoder rerank pool size (top-K from coarse recall) ───
+rerank_top_k: 500
+
+# ─── Final top-N (output CSV rows) ───
+final_top_n: 100

@@ -1,0 +1,307 @@
+# Honeypot & Trap Detection Rules
+# ============================================================================
+# Honeypots: HARD filters — any candidate matching one rule gets score=0
+#            and is excluded from top-100. Per spec Section 7, honeypot
+#            rate >10% in top-100 = disqualification at Stage 3.
+#
+# Traps:     SOFT penalties — candidate's score is multiplied by
+#            trap_penalty (default 0.3). Traps sink below top-100 but
+#            are not zeroed (in case of false positives we can audit).
+# ============================================================================
+
+# ─── Date reference for "today" (used in recency calc) ───
+# Set to the date the candidate pool was released. Update if needed.
+reference_date: "2026-06-20"
+
+# ============================================================================
+# HONEYPOT RULES (hard filters, score = 0)
+# ============================================================================
+
+honeypot_rules:
+
+  # ─── Rule 1: Single skill duration impossibility ───────────────────────
+  # A skill used for 60 months but candidate has only 12 months YOE.
+  # Allow 6-month grace for parallel learning/self-study before first job.
+  # (Replaces the over-aggressive "sum > 3x YOE" rule which gave false
+  # positives on real senior engineers who accumulate overlapping skill durations.)
+  - name: "single_skill_duration_exceeds_yoe"
+    description: "Any single skill duration_months exceeds candidate's total YOE in months + 6mo grace"
+    severity: hard
+    logic:
+      type: any_field_comparison
+      field: "skills.duration_months"
+      operator: ">"
+      reference: "years_of_experience * 12 + 6"
+    action: zero_score
+
+  # ─── Rule 1b: Sum of skill durations absurdly high (> 10x YOE) ─────────
+  # Catches candidates with 50+ skills each at high duration — clearly fake.
+  # 10x is very aggressive; real senior engineers max out around 5-7x due to
+  # skill overlap in same role.
+  - name: "skill_duration_sum_absurd"
+    description: "Sum of all skill durations exceeds 10x candidate's YOE in months"
+    severity: hard
+    logic:
+      type: comparison
+      field_left: "sum(skills.duration_months)"
+      operator: ">"
+      field_right: "years_of_experience * 12 * 10"
+    action: zero_score
+
+  # ─── Rule 2: Endorsement inflation ─────────────────────────────────────
+  # "Expert proficiency in N skills with 0 endorsements" — usually fake
+  - name: "endorsement_inflation"
+    description: "Expert proficiency in >=5 skills with 0 endorsements each"
+    severity: hard
+    logic:
+      type: count_threshold
+      filter:
+        skills.proficiency: "expert"
+        skills.endorsements: 0
+      operator: ">="
+      threshold: 5
+    action: zero_score
+
+  # ─── Rule 3: Career date impossibility ─────────────────────────────────
+  # Started a job before graduating, OR
+  # Earliest career start > 5 years before earliest education end
+  - name: "career_date_impossibility"
+    description: "Earliest career start is more than 5 years before earliest education end_year"
+    severity: hard
+    logic:
+      type: date_diff
+      field_left: "education[0].end_year"
+      field_right: "career_history.earliest.start_date.year"
+      operator: "<"   # education end < career start - 5
+      tolerance_years: 5
+    action: zero_score
+
+  # ─── Rule 5: YOE inflation ─────────────────────────────────────────────
+  # Claims 15 YOE but earliest career start is 2020 (only 6 years)
+  - name: "yoe_inflation"
+    description: "Claimed years_of_experience exceeds (reference_date - earliest_career_start) by > 2 years"
+    severity: hard
+    logic:
+      type: date_diff
+      field_left: "years_of_experience"
+      field_right: "reference_date - career_history.earliest.start_date"
+      operator: ">"
+      tolerance_years: 2
+    action: zero_score
+
+  # ─── Rule 6: Salary range inverted ─────────────────────────────────────
+  # expected min > expected max — data quality honeypot
+  - name: "salary_range_inverted"
+    description: "expected_salary_range_inr_lpa.min > expected_salary_range_inr_lpa.max"
+    severity: hard
+    logic:
+      type: field_comparison
+      field_left: "redrob_signals.expected_salary_range_inr_lpa.min"
+      operator: ">"
+      field_right: "redrob_signals.expected_salary_range_inr_lpa.max"
+    action: zero_score
+
+  # ─── Rule 7: Activity vs response mismatch ─────────────────────────────
+  # Inactive for 180+ days but recruiter_response_rate > 0.8 — suspicious
+  - name: "inactive_responsive_mismatch"
+    description: "Last active > 180 days ago but recruiter_response_rate > 0.8 (suspicious combination)"
+    severity: hard
+    logic:
+      type: and
+      conditions:
+        - field: "days_since_last_active"
+          operator: ">"
+          value: 180
+        - field: "redrob_signals.recruiter_response_rate"
+          operator: ">"
+          value: 0.8
+    action: zero_score
+
+  # ─── Rule 8: Impossible interview rate ─────────────────────────────────
+  # interview_completion_rate > 0 with applications_submitted_30d = 0 AND
+  # offer_acceptance_rate = -1 (no history) — internal contradiction
+  - name: "interview_rate_contradiction"
+    description: "Interview completion rate > 0 but no offer history and no recent applications"
+    severity: hard
+    logic:
+      type: and
+      conditions:
+        - field: "redrob_signals.interview_completion_rate"
+          operator: ">"
+          value: 0
+        - field: "redrob_signals.offer_acceptance_rate"
+          operator: "=="
+          value: -1
+        - field: "redrob_signals.applications_submitted_30d"
+          operator: "=="
+          value: 0
+    action: zero_score
+
+# ============================================================================
+# TRAP RULES (soft penalties, score *= 0.3)
+# ============================================================================
+
+trap_penalty_value: 0.3   # multiplier applied to base_score when any trap fires
+
+trap_rules:
+
+  # ─── Trap 1: Title-skill mismatch ──────────────────────────────────────
+  # The "Marketing Manager with 9 AI skills" pattern from the JD spec
+  - name: "title_skill_mismatch"
+    description: "Non-technical title (Manager/Designer/etc.) but >=5 AI-related skills claimed"
+    severity: soft
+    logic:
+      type: and
+      conditions:
+        - type: field_in_list
+          field: "profile.current_title"
+          list: "mismatched_titles"   # reference intent_schema.title_archetype_match.mismatched_titles
+        - type: count_threshold
+          filter:
+            skills.name_in: "ai_skill_keywords"
+          operator: ">="
+          threshold: 5
+
+  # ─── Trap 2: Services-only career ──────────────────────────────────────
+  # All career history at TCS/Infosys/Wipro/etc. — JD disqualifier
+  - name: "services_only_career"
+    description: "Entire career history at IT services companies (TCS, Infosys, Wipro, etc.)"
+    severity: soft
+    logic:
+      type: all_fields_in_list
+      field: "career_history[].company"
+      list: "services_companies"
+      exception: "any prior career_history[].company not in services_companies"
+
+  # ─── Trap 3: Pure research background ──────────────────────────────────
+  # All titles are "Researcher"/"Postdoc" — JD hard disqualifier (we soften to trap)
+  - name: "pure_research_background"
+    description: "All career history titles are research-only (Postdoc, Researcher, Research Scientist)"
+    severity: soft
+    logic:
+      type: all_fields_in_list
+      field: "career_history[].title"
+      list: "research_titles"
+
+  # ─── Trap 4: Recent-LangChain-only ─────────────────────────────────────
+  # All AI skill durations < 12 months AND no pre-LLM-era ML skill
+  - name: "recent_langchain_only"
+    description: "All AI skill durations < 12 months AND no pre-LLM ML experience"
+    severity: soft
+    logic:
+      type: and
+      conditions:
+        - type: all_match
+          filter:
+            skills.name_in: "ai_skill_keywords"
+            skills.duration_months: "<12"
+        - type: count_threshold
+          filter:
+            skills.name_in: "pre_llm_ml_keywords"
+          operator: "=="
+          threshold: 0
+
+  # ─── Trap 5: Title-chaser pattern ──────────────────────────────────────
+  # 3+ roles with duration < 18 months AND title progression Senior → Staff → Principal
+  - name: "title_chaser"
+    description: "3+ roles with duration < 18 months AND title progression shows Senior → Staff → Principal"
+    severity: soft
+    logic:
+      type: and
+      conditions:
+        - type: count_threshold
+          filter:
+            career_history.duration_months: "<18"
+          operator: ">="
+          threshold: 3
+        - type: title_progression_match
+          progression: ["Senior", "Staff", "Principal"]
+
+# ============================================================================
+# Reference lists used by rules above
+# ============================================================================
+
+ai_skill_keywords:
+  - "LLM"
+  - "NLP"
+  - "ML"
+  - "Deep Learning"
+  - "PyTorch"
+  - "TensorFlow"
+  - "RAG"
+  - "Embedding"
+  - "Embeddings"
+  - "Fine-tuning"
+  - "Fine-tuning LLMs"
+  - "LoRA"
+  - "QLoRA"
+  - "PEFT"
+  - "Vector Database"
+  - "Pinecone"
+  - "Weaviate"
+  - "Qdrant"
+  - "Milvus"
+  - "FAISS"
+  - "LangChain"
+  - "LlamaIndex"
+  - "Recommendation Systems"
+  - "Search"
+  - "Ranking"
+  - "Retrieval"
+  - "Transformer"
+  - "Attention"
+  - "BERT"
+  - "GPT"
+
+pre_llm_ml_keywords:
+  - "XGBoost"
+  - "LightGBM"
+  - "scikit-learn"
+  - "sklearn"
+  - "TensorFlow"
+  - "PyTorch"
+  - "Keras"
+  - "SVM"
+  - "Random Forest"
+  - "Gradient Boosting"
+  - "pandas"
+  - "numpy"
+  - "scipy"
+  - "Spark MLlib"
+  - "H2O"
+  - "Statistical Modeling"
+  - "Regression"
+
+services_companies:
+  - "TCS"
+  - "Tata Consultancy Services"
+  - "Infosys"
+  - "Wipro"
+  - "Accenture"
+  - "Cognizant"
+  - "Capgemini"
+  - "Tech Mahindra"
+  - "HCL Technologies"
+  - "HCLTech"
+  - "LTI"
+  - "Larsen & Toubro Infotech"
+  - "Mindtree"
+  - "Mphasis"
+  - "NTT Data"
+  - "Genpact"
+  - "IBM Global Services"
+  - "DXC Technology"
+  - "Atos"
+  - "Wipro Technologies"
+
+research_titles:
+  - "Researcher"
+  - "Postdoc"
+  - "Postdoctoral Researcher"
+  - "Research Scientist"
+  - "Research Intern"
+  - "Research Engineer"
+  - "Research Associate"
+  - "Visiting Researcher"
+  - "Principal Researcher"
+  - "Senior Researcher"

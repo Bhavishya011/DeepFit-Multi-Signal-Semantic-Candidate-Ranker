@@ -1,0 +1,388 @@
+# Skill Taxonomy — Canonical Skill Aliases
+# ============================================================================
+# Maps informal / vendor-specific / 2024-2026 AI terminology to canonical
+# skill names. Used by ranker/features.py (Module 6.5).
+#
+# Layered ON TOP OF ESCO. ESCO matches come first (if we add ESCO lookup
+# later); aliases fill the gap for modern AI terms ESCO hasn't indexed yet.
+#
+# Match logic (case-insensitive substring against text blob):
+#   text_blob = " ".join(skill.name for skill in candidate.skills)
+#             + " ".join(career.description for career in career_history)
+#   for canonical, entry in alias_map.items():
+#       for alias in entry.aliases:
+#           if alias.lower() in text_blob.lower():
+#               matched.add(canonical)
+#               break
+#
+# Why both skills + career descriptions?
+#   - "skills" list is curated by candidate; high precision but missing context
+#   - career_history descriptions often mention tools/patterns in context
+#     ("Built RAG with LangChain and Pinecone" might not appear in skills list
+#      but does appear in career description)
+# ============================================================================
+
+canonical_skills:
+
+  # ════════════════════════════════════════════════════════════════════════
+  # CORE RETRIEVAL & IR (JD's "things you absolutely need")
+  # ════════════════════════════════════════════════════════════════════════
+
+  "Embeddings-based Retrieval":
+    esco_uri: null
+    jd_axis: "embeddings_retrieval_production"
+    jd_must_have: true
+    aliases:
+      - "dense retrieval"
+      - "embedding retrieval"
+      - "embedding search"
+      - "semantic search"
+      - "vector search"
+      - "bi-encoder"
+      - "bi-encoder retrieval"
+      - "dual encoder"
+      - "dual-encoder"
+      - "embedding-based retrieval"
+      - "embedding index"
+      - "sentence-transformers"
+      - "sentence transformers"
+      - "Sentence-BERT"
+      - "SBERT"
+      - "BGE"
+      - "E5 embeddings"
+      - "GTE embeddings"
+      - "OpenAI embeddings"
+      - "text-embedding"
+      - "embedding drift"
+      - "retrieval quality regression"
+
+  "Vector Database":
+    esco_uri: null
+    jd_axis: "vector_db_production"
+    jd_must_have: true
+    aliases:
+      - "Pinecone"
+      - "Weaviate"
+      - "Qdrant"
+      - "Milvus"
+      - "Chroma"
+      - "ChromaDB"
+      - "pgvector"
+      - "FAISS"
+      - "HNSW"
+      - "HNSWlib"
+      - "ScaNN"
+      - "Annoy"
+      - "NMSLIB"
+      - "vector store"
+      - "vector database"
+      - "vector db"
+      - "vector index"
+      - "ANN index"
+      - "approximate nearest neighbor"
+
+  "Hybrid Search":
+    esco_uri: null
+    jd_axis: "vector_db_production"
+    jd_must_have: true
+    aliases:
+      - "hybrid retrieval"
+      - "hybrid search"
+      - "BM25 + dense"
+      - "BM25 dense fusion"
+      - "BM25 dense"
+      - "reciprocal rank fusion"
+      - "RRF"
+      - "OpenSearch"
+      - "Elasticsearch"
+      - "Solr"
+      - "Lucene"
+      - "kNN search"
+      - "lexical dense fusion"
+
+  # ════════════════════════════════════════════════════════════════════════
+  # RANKING EVALUATION (JD's hard requirement)
+  # ════════════════════════════════════════════════════════════════════════
+
+  "Ranking Evaluation":
+    esco_uri: null
+    jd_axis: "ranking_eval_frameworks"
+    jd_must_have: true
+    aliases:
+      - "NDCG"
+      - "nDCG"
+      - "normalized discounted cumulative gain"
+      - "MRR"
+      - "mean reciprocal rank"
+      - "MAP"
+      - "mean average precision"
+      - "Precision@K"
+      - "Precision@10"
+      - "Recall@K"
+      - "Recall@10"
+      - "offline evaluation"
+      - "offline eval"
+      - "online evaluation"
+      - "A/B testing"
+      - "A/B test"
+      - "AB test"
+      - "offline-to-online correlation"
+      - "eval framework"
+      - "evaluation framework"
+      - "ranking quality"
+      - "relevance judgment"
+      - "relevance judging"
+
+  "Learning to Rank":
+    esco_uri: null
+    jd_axis: "ranking_eval_frameworks"
+    jd_must_have: false
+    aliases:
+      - "LambdaMART"
+      - "Lambda MART"
+      - "XGBoost ranking"
+      - "XGBoost ranker"
+      - "LightGBM ranking"
+      - "LightGBM ranker"
+      - "LTR"
+      - "learning to rank"
+      - "learning-to-rank"
+      - "ranker model"
+      - "pointwise"
+      - "pairwise"
+      - "listwise"
+
+  # ════════════════════════════════════════════════════════════════════════
+  # LLM ENGINEERING (nice-to-have, NOT LangChain-only)
+  # ════════════════════════════════════════════════════════════════════════
+
+  "LLM Fine-tuning":
+    esco_uri: null
+    jd_axis: "lora_qlora_peft"
+    jd_must_have: false
+    aliases:
+      - "LoRA"
+      - "QLoRA"
+      - "PEFT"
+      - "parameter-efficient fine-tuning"
+      - "parameter efficient fine tuning"
+      - "adapter tuning"
+      - "instruction tuning"
+      - "instruction-tuning"
+      - "RLHF"
+      - "DPO"
+      - "direct preference optimization"
+      - "preference optimization"
+      - "fine-tuned Mistral"
+      - "fine-tuned Llama"
+      - "fine-tuned Qwen"
+      - "fine-tuning LLMs"
+      - "LLM fine-tuning"
+      - "LLM finetuning"
+      - "fine-tune LLM"
+      - "supervised fine-tuning"
+      - "SFT"
+
+  "LLM Serving":
+    esco_uri: null
+    jd_axis: null
+    jd_must_have: false
+    aliases:
+      - "vLLM"
+      - "TGI"
+      - "Text Generation Inference"
+      - "Triton Inference Server"
+      - "Triton"
+      - "TensorRT-LLM"
+      - "SGLang"
+      - "LLM deployment"
+      - "LLM serving"
+      - "model serving"
+      - "inference server"
+      - "inference optimization"
+      - "quantization"
+      - "INT8"
+      - "INT4"
+      - "GGUF"
+      - "AWQ"
+      - "GPTQ"
+
+  "LLM Orchestration":
+    esco_uri: null
+    jd_axis: null
+    jd_must_have: false
+    aliases:
+      - "LangChain"
+      - "LlamaIndex"
+      - "semantic kernel"
+      - "Semantic Kernel"
+      - "haystack"
+      - "LLM orchestration"
+      - "LLM framework"
+
+  "Retrieval Augmented Generation":
+    esco_uri: null
+    jd_axis: null
+    jd_must_have: false
+    aliases:
+      - "RAG"
+      - "retrieval augmented generation"
+      - "retrieval-augmented generation"
+      - "retrieval augmented"
+      - "grounded generation"
+      - "knowledge grounded"
+      - "knowledge-augmented"
+
+  # ════════════════════════════════════════════════════════════════════════
+  # PRODUCTION ML
+  # ════════════════════════════════════════════════════════════════════════
+
+  "ML Production Deployment":
+    esco_uri: null
+    jd_axis: null
+    jd_must_have: false
+    aliases:
+      - "MLOps"
+      - "ML platform"
+      - "ML platform engineer"
+      - "model serving"
+      - "BentoML"
+      - "Seldon"
+      - "Seldon Core"
+      - "KServe"
+      - "MLflow"
+      - "Weights & Biases"
+      - "W&B"
+      - "experiment tracking"
+      - "model registry"
+      - "feature store"
+      - "Feast"
+      - "Tecton"
+      - "model monitoring"
+      - "drift detection"
+      - "embedding drift"
+      - "retrieval quality regression"
+      - "SLO"
+      - "SLA"
+      - "production ML"
+      - "productionization"
+      - "productionisation"
+      - "deployed to production"
+      - "production deployment"
+
+  # ════════════════════════════════════════════════════════════════════════
+  # CORE PYTHON ENGINEERING (JD's must-have #3)
+  # ════════════════════════════════════════════════════════════════════════
+
+  "Python":
+    esco_uri: null
+    jd_axis: "strong_python"
+    jd_must_have: true
+    aliases:
+      - "Python"
+      - "Python 3"
+      - "CPython"
+
+  "FastAPI":
+    esco_uri: null
+    jd_axis: "strong_python"
+    jd_must_have: false
+    aliases:
+      - "FastAPI"
+      - "Fast API"
+
+  "Async Python":
+    esco_uri: null
+    jd_axis: "strong_python"
+    jd_must_have: false
+    aliases:
+      - "asyncio"
+      - "async python"
+      - "asynchronous python"
+
+  "Python Testing":
+    esco_uri: null
+    jd_axis: "strong_python"
+    jd_must_have: false
+    aliases:
+      - "pytest"
+      - "unittest"
+      - "nose"
+
+  # ════════════════════════════════════════════════════════════════════════
+  # DISTRIBUTED SYSTEMS (nice-to-have)
+  # ════════════════════════════════════════════════════════════════════════
+
+  "Distributed Systems":
+    esco_uri: null
+    jd_axis: "distributed_systems"
+    jd_must_have: false
+    aliases:
+      - "distributed systems"
+      - "Kubernetes"
+      - "K8s"
+      - "Docker"
+      - "containerization"
+      - "microservices"
+      - "service mesh"
+      - "gRPC"
+      - "Kafka"
+      - "RabbitMQ"
+      - "Redis"
+      - "Cassandra"
+      - "MongoDB"
+
+  # ════════════════════════════════════════════════════════════════════════
+  # TRADITIONAL ML (signals pre-LLM-era depth — JD wants pre-LLM experience)
+  # ════════════════════════════════════════════════════════════════════════
+
+  "Pre-LLM ML":
+    esco_uri: null
+    jd_axis: null
+    jd_must_have: false
+    aliases:
+      - "XGBoost"
+      - "LightGBM"
+      - "scikit-learn"
+      - "sklearn"
+      - "TensorFlow"
+      - "PyTorch"
+      - "Keras"
+      - "pandas"
+      - "numpy"
+      - "scipy"
+      - "gradient boosting"
+      - "random forest"
+      - "logistic regression"
+      - "SVM"
+      - "neural network"
+      - "CNN"
+      - "RNN"
+      - "LSTM"
+      - "transformer"
+
+  # ════════════════════════════════════════════════════════════════════════
+  # HR-TECH / MARKETPLACE (nice-to-have)
+  # ════════════════════════════════════════════════════════════════════════
+
+  "HR Tech / Recruiting":
+    esco_uri: null
+    jd_axis: "hr_tech_marketplace"
+    jd_must_have: false
+    aliases:
+      - "HR tech"
+      - "HR-tech"
+      - "recruiting tech"
+      - "talent intelligence"
+      - "job matching"
+      - "candidate matching"
+      - "ATS"
+      - "applicant tracking"
+      - "marketplace"
+      - "two-sided marketplace"
+      - "LinkedIn"
+      - "Indeed"
+      - "HireEZ"
+      - "Eightfold"
+      - "Gem"
+      - "SeekOut"

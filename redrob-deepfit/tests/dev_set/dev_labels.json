@@ -1,0 +1,208 @@
+{
+  "_comment": "50-candidate dev set labels. Hand-label each candidate into tier 0-3. Used by scripts/tune_*.py to grid-search combiner weights. Format: candidate_id -> tier (0=irrelevant, 1=marginal, 2=relevant, 3=highly-relevant top-10 quality). Also includes 'notes' field for reasoning audit.",
+  "_status": "TODO - hand-label these 50 candidates before tuning",
+  "_labeling_guide": "Tier 3 (top-10 quality): ML/AI Engineer at product company, 5-9 YOE, shipped retrieval/ranking to real users, active on Redrob (last_active < 30d, response_rate > 0.5), Pune/Noida/Hyderabad/Mumbai/Delhi NCR location, notice < 30d. Tier 2: Solid match with 1 minor concern (e.g. slightly outside YOE band, or notice 60d). Tier 1: Adjacent skills, missing key requirement (e.g. Backend Engineer with ML side projects). Tier 0: Honeypot, trap, or hard disqualifier (services-only, research-only, marketing manager with AI skills, etc.).",
+  "labels": {
+    "CAND_0000001": {
+      "tier": 1,
+      "note": "auto-accepted heuristic: YOE 6.9 in ideal band | location Toronto (outside India)"
+    },
+    "CAND_0000002": {
+      "tier": 1,
+      "note": "auto-accepted heuristic: stale 220d ago | YOE 12.5 above band"
+    },
+    "CAND_0000003": {
+      "tier": 0,
+      "note": "auto-accepted heuristic: HONEYPOT: skill 'Kubernetes' duration 34mo > YOE 13mo | TRAP: services-only career (TCS)"
+    },
+    "CAND_0000004": {
+      "tier": 1,
+      "note": "auto-accepted heuristic: location Sydney (outside India) | notice 120d (high bar)"
+    },
+    "CAND_0000005": {
+      "tier": 1,
+      "note": "auto-accepted heuristic: stale 262d ago | location Gurgaon, Haryana (tier-1)"
+    },
+    "CAND_0000006": {
+      "tier": 1,
+      "note": "auto-accepted heuristic: stale 112d ago | YOE 6.0 in ideal band"
+    },
+    "CAND_0000007": {
+      "tier": 2,
+      "note": "auto-accepted heuristic: active 26d ago | response_rate 0.62"
+    },
+    "CAND_0000008": {
+      "tier": 0,
+      "note": "auto-accepted heuristic: TRAP: services-only career (Wipro)"
+    },
+    "CAND_0000009": {
+      "tier": 0,
+      "note": "auto-accepted heuristic: HONEYPOT: salary min(16.0) > max(7.3)"
+    },
+    "CAND_0000010": {
+      "tier": 1,
+      "note": "auto-accepted heuristic: location London (outside India) | notice 120d (high bar)"
+    },
+    "CAND_0000011": {
+      "tier": 0,
+      "note": "auto-accepted heuristic: HONEYPOT: skill 'Kubeflow' duration 59mo > YOE 24mo | HONEYPOT: salary min(15.5) > max(13.9)"
+    },
+    "CAND_0000012": {
+      "tier": 0,
+      "note": "auto-accepted heuristic: HONEYPOT: skill 'Content Writing' duration 36mo > YOE 13mo | HONEYPOT: salary min(14.8) > max(7.9)"
+    },
+    "CAND_0000013": {
+      "tier": 0,
+      "note": "auto-accepted heuristic: HONEYPOT: skill 'Data Pipelines' duration 36mo > YOE 13mo | HONEYPOT: salary min(11.6) > max(8.1)"
+    },
+    "CAND_0000014": {
+      "tier": 2,
+      "note": "auto-accepted heuristic: response_rate 0.8 | YOE 8.4 in ideal band"
+    },
+    "CAND_0000015": {
+      "tier": 0,
+      "note": "auto-accepted heuristic: HONEYPOT: salary min(21.8) > max(18.9)"
+    },
+    "CAND_0000016": {
+      "tier": 2,
+      "note": "auto-accepted heuristic: stale 181d ago | response_rate 0.64"
+    },
+    "CAND_0000017": {
+      "tier": 0,
+      "note": "auto-accepted heuristic: HONEYPOT: salary min(13.8) > max(8.4)"
+    },
+    "CAND_0000018": {
+      "tier": 1,
+      "note": "auto-accepted heuristic: stale 122d ago | YOE 6.6 in ideal band"
+    },
+    "CAND_0000019": {
+      "tier": 0,
+      "note": "auto-accepted heuristic: HONEYPOT: salary min(12.5) > max(7.7)"
+    },
+    "CAND_0000020": {
+      "tier": 2,
+      "note": "auto-accepted heuristic: stale 258d ago | response_rate 0.55"
+    },
+    "CAND_0000021": {
+      "tier": 0,
+      "note": "auto-accepted heuristic: TRAP: Project Manager with 6 AI skills (keyword stuffer)"
+    },
+    "CAND_0000022": {
+      "tier": 0,
+      "note": "auto-accepted heuristic: HONEYPOT: skill 'SQL' duration 36mo > YOE 13mo | HONEYPOT: salary min(12.3) > max(8.5)"
+    },
+    "CAND_0000023": {
+      "tier": 1,
+      "note": "auto-accepted heuristic: response_rate 0.57 | location New York (outside India)"
+    },
+    "CAND_0000024": {
+      "tier": 0,
+      "note": "auto-accepted heuristic: TRAP: services-only career (TCS, Infosys)"
+    },
+    "CAND_0000025": {
+      "tier": 1,
+      "note": "auto-accepted heuristic: response_rate 0.74 | YOE 7.3 in ideal band"
+    },
+    "CAND_0000026": {
+      "tier": 0,
+      "note": "auto-accepted heuristic: HONEYPOT: salary min(17.1) > max(8.0)"
+    },
+    "CAND_0000027": {
+      "tier": 0,
+      "note": "auto-accepted heuristic: TRAP: services-only career (Infosys, Wipro)"
+    },
+    "CAND_0000028": {
+      "tier": 0,
+      "note": "auto-accepted heuristic: HONEYPOT: skill 'Photoshop' duration 30mo > YOE 13mo | TRAP: services-only career (Wipro)"
+    },
+    "CAND_0000029": {
+      "tier": 1,
+      "note": "auto-accepted heuristic: stale 264d ago | YOE 7.2 in ideal band"
+    },
+    "CAND_0000030": {
+      "tier": 0,
+      "note": "auto-accepted heuristic: HONEYPOT: salary min(14.7) > max(14.2)"
+    },
+    "CAND_0000031": {
+      "tier": 0,
+      "note": "auto-accepted heuristic: HONEYPOT: skill 'Pinecone' duration 88mo > YOE 72mo"
+    },
+    "CAND_0000032": {
+      "tier": 0,
+      "note": "auto-accepted heuristic: HONEYPOT: salary min(18.3) > max(15.7)"
+    },
+    "CAND_0000033": {
+      "tier": 1,
+      "note": "auto-accepted heuristic: low response_rate 0.08 | YOE 8.6 in ideal band"
+    },
+    "CAND_0000034": {
+      "tier": 1,
+      "note": "auto-accepted heuristic: stale 168d ago | YOE 14.5 above band"
+    },
+    "CAND_0000035": {
+      "tier": 0,
+      "note": "auto-accepted heuristic: HONEYPOT: skill 'BentoML' duration 59mo > YOE 52mo"
+    },
+    "CAND_0000036": {
+      "tier": 0,
+      "note": "auto-accepted heuristic: HONEYPOT: salary min(15.3) > max(9.7)"
+    },
+    "CAND_0000037": {
+      "tier": 1,
+      "note": "auto-accepted heuristic: stale 191d ago | response_rate 0.78"
+    },
+    "CAND_0000038": {
+      "tier": 2,
+      "note": "auto-accepted heuristic: YOE 6.7 in ideal band | location Coimbatore, Tamil Nadu (tier-2)"
+    },
+    "CAND_0000039": {
+      "tier": 0,
+      "note": "auto-accepted heuristic: HONEYPOT: salary min(17.4) > max(16.0)"
+    },
+    "CAND_0000040": {
+      "tier": 0,
+      "note": "auto-accepted heuristic: HONEYPOT: skill 'Spring Boot' duration 27mo > YOE 19mo"
+    },
+    "CAND_0000041": {
+      "tier": 1,
+      "note": "auto-accepted heuristic: stale 96d ago | low response_rate 0.07"
+    },
+    "CAND_0000042": {
+      "tier": 1,
+      "note": "auto-accepted heuristic: stale 240d ago | response_rate 0.58"
+    },
+    "CAND_0000043": {
+      "tier": 1,
+      "note": "auto-accepted heuristic: stale 170d ago | low response_rate 0.04"
+    },
+    "CAND_0000044": {
+      "tier": 2,
+      "note": "auto-accepted heuristic: stale 191d ago | response_rate 0.66"
+    },
+    "CAND_0000045": {
+      "tier": 2,
+      "note": "auto-accepted heuristic: response_rate 0.62 | YOE 12.2 above band"
+    },
+    "CAND_0000046": {
+      "tier": 1,
+      "note": "auto-accepted heuristic: stale 120d ago | YOE 7.8 in ideal band"
+    },
+    "CAND_0000047": {
+      "tier": 0,
+      "note": "auto-accepted heuristic: TRAP: services-only career (TCS)"
+    },
+    "CAND_0000048": {
+      "tier": 1,
+      "note": "auto-accepted heuristic: response_rate 0.65 | location Hyderabad, Telangana (tier-1)"
+    },
+    "CAND_0000049": {
+      "tier": 1,
+      "note": "auto-accepted heuristic: response_rate 0.59 | location Berlin (outside India)"
+    },
+    "CAND_0000050": {
+      "tier": 1,
+      "note": "auto-accepted heuristic: stale 241d ago | YOE 13.5 above band"
+    }
+  },
+  "_last_updated": "2026-06-22T14:34:59.584049"
+}

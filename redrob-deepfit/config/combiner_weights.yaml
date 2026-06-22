@@ -1,0 +1,131 @@
+# Combiner Weights — THE final score equation
+# ============================================================================
+# This is the single source of truth for the final_score() equation.
+# Every teammate imports from this file. NO HARDCODED WEIGHTS in module code.
+#
+# final_score = base_score * honeypot_penalty * trap_penalty * availability_mult
+#
+# where base_score = Σ(W[i] * component[i]) for i in components
+#       and weights MUST sum to 1.0 (asserted at runtime)
+# ============================================================================
+
+# ─── Base score weights (MUST sum to 1.0) ─────────────────────────────────
+# Tunable; tune on dev_set (50 hand-labeled candidates) using
+# scripts/tune_combiner.py (grid search keeping sum=1.0)
+base_weights:
+  semantic:       0.55    # Dominant — semantic fit is king (Module 6)
+  structural:     0.20    # Yoe band, location, education tier, work_mode match
+  production:     0.10    # Career descriptions show shipped systems (Module 4)
+  esco_coverage:  0.10    # Skill taxonomy coverage with AI aliases (Module 6.5)
+  seniority:      0.05    # Title level match vs JD seniority expectation
+
+# ─── Multipliers (multiplicative kill switches) ───────────────────────────
+
+# Honeypot: hard filter. 0.0 = excluded from top-100, 1.0 = passes
+honeypot_penalty:
+  clean: 1.0
+  flagged: 0.0
+
+# Trap: soft penalty. 1.0 = clean, 0.3 = trap pattern detected
+trap_penalty:
+  clean: 1.0
+  flagged: 0.3
+
+# Availability: continuous modulation [min, max]
+# Range chosen so that a perfect-on-paper dead candidate caps at
+# base * 1.0 * 1.0 * 0.30 = 0.255 (below rank 100 cutoff)
+availability_mult:
+  min: 0.30
+  max: 1.20
+
+# ─── Availability sub-component weights (Module 5) ────────────────────────
+# All multiplied together to get availability_mult in [min, max]
+availability_components:
+
+  # Recency: exponential decay, half-life = N days
+  recency:
+    half_life_days: 60      # 1.0 if active today, 0.5 at 60d, 0.25 at 120d
+    min_value: 0.10         # floor — even 1-year-inactive gets 0.10
+
+  # Response rate: logistic, centered at threshold
+  response_rate:
+    sigmoid_center: 0.30
+    sigmoid_slope: 8.0      # 1 / (1 + exp(-slope * (x - center)))
+
+  # Open-to-work boost
+  open_to_work:
+    boost: 1.15             # multiplier if open_to_work_flag = true
+    no_boost: 1.0
+
+  # Verified signal boosts
+  verified_email_boost: 1.02
+  verified_phone_boost: 1.02
+  linkedin_connected_boost: 1.03
+
+  # Notice period penalty (step function)
+  notice_period:
+    ideal_max_days: 30
+    buyout_days: 30         # can buy out up to this
+    penalty_tiers:
+      - {max_days: 30, multiplier: 1.00}
+      - {max_days: 60, multiplier: 0.95}
+      - {max_days: 90, multiplier: 0.85}
+      - {max_days: 180, multiplier: 0.70}
+      - {max_days: 999999, multiplier: 0.50}
+
+  # GitHub activity (only if linked, github_activity_score >= 0)
+  github_activity:
+    boost_max: 0.10         # max +10% on availability_mult
+    normalize_divisor: 50   # github_activity_score / 50 → boost fraction
+
+  # Recruiter demand (saved_by_recruiters_30d)
+  recruiter_demand:
+    boost_max: 0.05         # max +5%
+    normalize_divisor: 20   # saved_by_recruiters_30d / 20 → boost fraction
+
+# ─── Structural score sub-components (Module 6 structural_score) ─────────
+structural_components:
+
+  # YOE band: 5-9 ideal (per JD), outside = decayed score
+  yoe_band:
+    ideal_min: 5
+    ideal_max: 9
+    outside_decay: 0.85     # multiplier per year outside band
+    floor: 0.30
+    ceiling: 1.00           # within band = 1.0
+
+  # Location match (tiered)
+  location:
+    tier_1_score: 1.00      # Pune, Noida, Hyderabad, Mumbai, Delhi NCR, Bangalore
+    tier_2_score: 0.85      # Chennai, Kolkata, Ahmedabad, etc.
+    tier_3_india_score: 0.70   # other India
+    outside_india_score: 0.40  # case-by-case per JD
+
+  # Education tier (per schema: tier_1, tier_2, tier_3, tier_4, unknown)
+  education_tier:
+    tier_1: 1.00
+    tier_2: 0.85
+    tier_3: 0.70
+    tier_4: 0.55
+    unknown: 0.60
+
+  # Work mode match
+  work_mode:
+    hybrid: 1.00            # JD is hybrid
+    flexible: 1.00
+    remote: 0.90
+    onsite: 0.85
+
+# ─── Seniority match sub-components ──────────────────────────────────────
+seniority_components:
+
+  # Title level mapping (extracted from current_title)
+  title_level:
+    senior: 1.00            # "Senior", "Lead", "Staff"
+    mid: 0.85               # no level prefix (just "Engineer", "ML Engineer")
+    junior: 0.40            # "Junior", "Associate", "Intern"
+    too_senior_noncoding: 0.50  # "Architect", "Director", "VP", "Head of", "Manager"
+    unknown: 0.70
+
+  # Title archetype match (cosine similarity threshold)
+  archetype_match_threshold: 0.65   # if cosine(title_emb, intent_title_emb) >= this, full credit
