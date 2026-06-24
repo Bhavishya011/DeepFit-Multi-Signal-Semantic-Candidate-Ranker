@@ -348,10 +348,6 @@ python rank.py --candidates ./candidates.jsonl --out ./submission.csv
 
 **Bhavishya Jain** — bhavishyajain011@gmail.com
 
-## AI Tools Declaration
-
-- **Claude** — architecture discussion, JD-intent decomposition, code review
-- **GitHub Copilot** — autocomplete
 
 No candidate data was fed to any LLM. No LLM calls during the ranking step. The JD-intent schema is hand-crafted and human-reviewed for defensibility at Stage 5 interview.
 
