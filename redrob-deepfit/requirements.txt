@@ -1,10 +1,9 @@
 # ─── Pre-computation (offline, network allowed) ───────────────────────────
 sentence-transformers==3.0.1
-FlagEmbedding==1.3.0
+FlagEmbedding==1.3.2
 onnxruntime==1.18.0
-optimum==1.21.0
 torch==2.2.2 --index-url https://download.pytorch.org/whl/cpu
-transformers==4.42.0
+transformers==4.44.2
 rank-bm25==0.2.2
 
 # ─── Ranking step (constrained: 5min, 16GB, CPU, no network) ──────────────
