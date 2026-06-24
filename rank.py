@@ -101,7 +101,6 @@ Examples:
         candidates=candidates,
         top_n=args.top_n,
         coarse_recall_k=args.coarse_recall_k,
-        rerank_k=args.rerank_k,
         verbose=not args.quiet,
     )
 
@@ -117,7 +116,8 @@ Examples:
     if len(results) != args.top_n:
         log.warning(f"Expected {args.top_n} results, got {len(results)}")
     if results:
-        scores = [r.score for r in results]
+        # Use rounded scores (4 decimal places, matching CSV output) for monotonicity check
+        scores = [round(r.score, 4) for r in results]
         if not all(scores[i] >= scores[i + 1] for i in range(len(scores) - 1)):
             log.error("Scores are not non-increasing by rank! This will fail validation.")
             sys.exit(1)

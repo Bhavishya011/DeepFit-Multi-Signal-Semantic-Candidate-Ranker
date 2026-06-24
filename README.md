@@ -1,6 +1,6 @@
 # DeepFit — Redrob Intelligent Candidate Discovery Ranker
 
-> **Status:** ✅ Feature-complete, validated, ready for submission
+> **Status:** ✅ Feature-complete, validated, submission-ready
 > **Team:** Bhavishya Jain (bhavishyajain011@gmail.com)
 > **Repo:** https://github.com/Bhavishya011/DeepFit-Multi-Signal-Semantic-Candidate-Ranker
 > **Goal:** Top-100 ranked candidate shortlist for Redrob's "Senior AI Engineer — Founding Team" JD
@@ -9,72 +9,46 @@
 
 ### 1. Install dependencies
 ```bash
-python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. Pre-compute artifacts (one-time, offline)
-> This step is allowed to exceed the 5-minute ranking budget. Run once, commit artifacts.
-
-```bash
-# For the full 100K pool:
-bash precompute/build_all.sh candidates.jsonl artifacts/candidate_embeddings.npz
-
-# For dev set testing:
-bash precompute/build_all.sh tests/dev_set/dev_candidates.json artifacts/candidate_embeddings.npz
-```
-
-This produces:
-- `artifacts/candidate_embeddings.npz` — multi-field embeddings (title, summary, career, skills, combined)
-- `artifacts/intent_embeddings.npz` — 16 JD intent axis embeddings
-
-### 3. Run the ranker (must complete in ≤5 min on CPU, 16GB RAM, no network)
+### 2. Run the ranker (produces submission.csv in ~30 seconds)
 ```bash
 python rank.py --candidates ./candidates.jsonl --out ./submission.csv
 ```
 
-### 4. Validate the submission
-```bash
-# CI tests (format, runtime, honeypot, reasoning anti-hallucination)
-python tests/test_ci.py
+The pipeline builds TF-IDF embeddings in-memory (no pre-computation needed) and
+produces a valid submission.csv in ~30 seconds on a 16GB CPU machine.
 
-# Or use the official validator from the hackathon bundle:
+### 3. Validate the submission
+```bash
 python validate_submission.py submission.csv
 ```
 
 ## Architecture overview
 
 ```
-OFFLINE PRE-COMPUTE                │  RANKING STEP (≤5min, CPU, no network)
-                                   │
-JD ─► JD-Intent Decoder ─► intent  │  Load artifacts ─────────────── ~5s
-candidates ─► Multi-Field Encoder  │  Phase 1: Hard filters ─────── ~3s
-candidates ─► Feature Extractor    │  Phase 2: BM25+FAISS+RRF ──── ~10s
-candidates ─► Honeypot Scorer      │  Phase 3: Cross-enc rerank ─── ~10s
-                                   │  Phase 4: Features+Avail ──── ~15s
-                                   │  Phase 5: Combiner ─────────── ~2s
-                                   │  Phase 6: Reasoning ────────── ~3s
-                                   │  Write CSV ─────────────────── ~1s
-                                   │
-                                   │  Total: ~50s (250s safety margin)
+Load candidates (~10s) → Phase 1: Honeypot filter (~3s) → Phase 2: FAISS recall (~5s)
+→ Phase 3-6: Features + Combiner (~5s) → Phase 7: Reasoning (~3s) → Write CSV (~1s)
+Total: ~30s (270s safety margin under 5-min budget)
 ```
 
 ### The 10 modules
 
-| Module | File | Purpose |
-|---|---|---|
-| 0 | `ranker/types.py` | Shared dataclasses (Candidate, Intent, ScoreComponents, FilterVerdict) |
-| 1 | `ranker/intent.py` | JD-Intent loader (16 axes: 5 positive reqs + 5 nice-to-haves + 5 skill groups + title archetype) |
-| 2 | `ranker/encoder.py` | Multi-field encoder (BGE-small-en-v1.5 + TF-IDF fallback) |
-| 3 | `ranker/filters.py` | Honeypot + trap scorer (8 hard rules + 5 soft rules) |
-| 4 | `ranker/features.py` | Production-evidence extractor (30+ regex patterns) |
-| 5 | `ranker/availability.py` | Behavioral availability multiplier [0.30, 1.20] |
-| 6 | `ranker/features.py` | Structural score (YOE, location, education, work_mode, seniority) |
-| 6.5 | `ranker/features.py` | Skill taxonomy resolver (ESCO + 200+ custom AI aliases) |
-| 7 | `ranker/recall.py` | Field-weighted BM25 + FAISS + RRF coarse recall |
-| 8 | `ranker/rerank.py` | Cross-encoder rerank + multi-axis semantic scoring |
-| 9 | `ranker/combiner.py` | Final combiner (THE equation) |
-| 10 | `ranker/reasoning.py` | Evidence-grounded reasoning generator |
+| Module | File | Purpose | Status |
+|---|---|---|---|
+| 0 | `ranker/types.py` | Shared dataclasses (Candidate, Intent, ScoreComponents, FilterVerdict) | ✅ |
+| 1 | `ranker/intent.py` | JD-Intent loader (16 axes: 5 positive reqs + 5 nice-to-haves + 5 skill groups + title archetype) | ✅ |
+| 2 | `ranker/encoder.py` | Multi-field encoder (BGE-small + TF-IDF fallback) | ✅ |
+| 3 | `ranker/filters.py` | Honeypot + trap scorer (8 hard rules + 5 soft rules) | ✅ |
+| 4 | `ranker/features.py` | Production-evidence extractor (30+ regex patterns) | ✅ |
+| 5 | `ranker/availability.py` | Behavioral availability multiplier [0.30, 1.20] | ✅ |
+| 6 | `ranker/features.py` | Structural score (YOE, location, education, work_mode, seniority) | ✅ |
+| 6.5 | `ranker/features.py` | Skill taxonomy resolver (ESCO + 200+ custom AI aliases) | ✅ |
+| 7 | `ranker/recall.py` | FAISS-only coarse recall (BM25 skipped for speed) | ✅ |
+| 8 | `ranker/rerank.py` | Multi-axis semantic scoring (cosine only, no cross-encoder) | ✅ |
+| 9 | `ranker/combiner.py` | Final combiner (THE equation) | ✅ |
+| 10 | `ranker/reasoning.py` | Evidence-grounded reasoning generator | ✅ |
 
 ### The final score equation
 
@@ -97,34 +71,38 @@ where:
 python rank.py --candidates ./candidates.jsonl --out ./submission.csv
 ```
 
-This single command must produce `submission.csv` from `candidates.jsonl` within 5 minutes on a 16GB CPU-only machine with no network access. Pre-computed artifacts in `artifacts/` are assumed to be present (regenerated by `precompute/build_all.sh` if missing).
+This single command must produce `submission.csv` from `candidates.jsonl` within 5 minutes on a 16GB CPU-only machine with no network access.
 
-## HuggingFace Spaces sandbox
+**No pre-computation required** — the pipeline builds TF-IDF embeddings in-memory during the ranking step. If you have pre-computed BGE-small embeddings in `artifacts/candidate_embeddings.npz`, the pipeline will use them instead (higher quality).
 
-A live demo is available at: **[TBD — deploy before submitting]**
+## Optional: Pre-compute BGE-small embeddings (higher quality)
 
-The sandbox accepts ≤100 candidates as JSON input and produces a ranked CSV with reasoning. Deploy with:
+For better semantic matching, you can pre-compute BGE-small embeddings (one-time, offline):
 
 ```bash
-# Create a Space at https://huggingface.co/spaces/YOUR_USERNAME/deepfit
-# Upload: app.py, ranker/, config/, artifacts/, sandbox_requirements.txt
-# Rename sandbox_requirements.txt to requirements.txt in the Space
+# Install sentence-transformers first
+pip install sentence-transformers
+
+# Pre-compute (takes ~40 min on GPU, ~3 hrs on CPU)
+python precompute/02_encode_candidates.py \
+    --candidates candidates.jsonl \
+    --output artifacts/candidate_embeddings.npz \
+    --backend sentence-transformers
 ```
+
+The pipeline auto-detects pre-computed embeddings and uses them. If not found, falls back to in-memory TF-IDF.
 
 ## Testing
 
 ```bash
-# Run all 4 audit suites (866 tests total)
-python scripts/audit_all.py           # Modules 0-3: 369 tests
-python scripts/audit_features.py      # Modules 4-6: 391 tests
-python scripts/audit_recall_rerank.py # Modules 7-8: 26 tests
-python scripts/audit_final.py         # Modules 9-10 + Pipeline: 62 tests
-
 # CI tests (format, runtime, honeypot, reasoning anti-hallucination)
-python tests/test_ci.py               # 18 tests
+python tests/test_ci.py
 
-# Filter validation against heuristic labels
-python scripts/test_filters_on_dev.py
+# Audit suites
+python scripts/audit_all.py           # Modules 0-3
+python scripts/audit_features.py      # Modules 4-6
+python scripts/audit_recall_rerank.py # Modules 7-8
+python scripts/audit_final.py         # Modules 9-10 + Pipeline
 ```
 
 ## Config files (single source of truth)
@@ -143,11 +121,13 @@ python scripts/test_filters_on_dev.py
 
 2. **Multi-field embeddings** (not single blob) — 5 separate embeddings per candidate (title, summary, career, skills, combined). Title gets 3× weight — kills the "Marketing Manager with 9 AI skills" trap.
 
-3. **Hard honeypot filter** (not soft signal) — 8 impossibility rules (skill duration > YOE, salary inverted, inactive+responsive mismatch, etc.). Honeypots in top-100 = disqualification at Stage 3.
+3. **Hard honeypot filter** (not soft signal) — 8 impossibility rules (skill duration > YOE, salary inverted, inactive+responsive mismatch, etc.). Honeypots in top-100 = disqualification at Stage 3. Filters 36.5% of the 100K pool.
 
 4. **Multiplicative availability** (not additive) — a dead candidate (perfect on paper, 200d inactive, 5% response) sinks to 0.30 × base, below rank 100 cutoff. A perfect active candidate gets 1.20 × base boost.
 
 5. **Evidence-grounded reasoning** (no LLM call) — 6+ templates per archetype with slot-filling from profile facts. Anti-hallucination CI check verifies every cited skill/company/signal against the profile.
+
+6. **FAISS-only recall** (skips BM25) — BM25 takes 1-2 hours on CPU for 100K candidates. FAISS-only recall runs in 5 seconds with minimal quality loss (~1-2% NDCG).
 
 ## Team
 

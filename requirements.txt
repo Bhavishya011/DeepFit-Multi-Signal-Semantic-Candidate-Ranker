@@ -1,25 +1,30 @@
-# ─── Pre-computation (offline, network allowed) ───────────────────────────
-sentence-transformers==3.0.1
-FlagEmbedding==1.3.2
-onnxruntime==1.18.0
-torch==2.2.2 --index-url https://download.pytorch.org/whl/cpu
-transformers==4.44.2
+# ─── Core ranking dependencies (required for rank.py) ─────────────────────
+# These are the ONLY deps needed to run `python rank.py` and produce submission.csv
+
+# Retrieval
 rank-bm25==0.2.2
-
-# ─── Ranking step (constrained: 5min, 16GB, CPU, no network) ──────────────
 faiss-cpu==1.8.0
-numpy==1.26.4
-pandas==2.2.2
-scipy==1.13.0
-pyarrow==16.1.0
-pyyaml==6.0.1
-tqdm==4.66.4
 
-# ─── Dev / testing only ───────────────────────────────────────────────────
-pytest==8.2.0
-pytest-timeout==2.3.1
-ruff==0.4.7
+# Data + math
+numpy>=1.26.0,<3.0
+pandas>=2.0.0
+scipy>=1.11.0
+scikit-learn>=1.3.0
 
-# ─── Optional: JD-Intent Decoder LLM call (one-time, offline) ─────────────
-# anthropic==0.28.0  # uncomment if using Claude for JD decode
-# openai==1.35.0     # uncomment if using GPT-4 for JD decode
+# Config + I/O
+pyyaml>=6.0
+pyarrow>=14.0.0
+tqdm>=4.65.0
+
+# ─── Optional: Pre-compute BGE-small embeddings (higher quality) ──────────
+# Uncomment these if you want to pre-compute BGE-small embeddings instead of
+# using the TF-IDF fallback. The pipeline works without these — it auto-falls
+# back to in-memory TF-IDF embeddings if sentence-transformers isn't installed.
+#
+# sentence-transformers>=3.0.0
+# torch>=2.0.0  # install CPU version: pip install torch --index-url https://download.pytorch.org/whl/cpu
+# transformers>=4.40.0
+
+# ─── Dev / testing only (not required for submission) ─────────────────────
+# pytest>=8.0.0
+# pytest-timeout>=2.3.0
